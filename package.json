@@ -1,0 +1,17 @@
+{
+  "name": "@deepseek-ai/dsh-desktop",
+  "description": "Desktop shell that wraps the dsh web runtime (built with Tauri 2)",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:no-bundle": "tauri build --no-bundle",
+    "icon": "tauri icon"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.0"
+  }
+}
