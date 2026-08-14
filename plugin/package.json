@@ -1,8 +1,10 @@
 {
-  "name": "@deepseek-ai/dsh-desktop-plugin",
+  "name": "@aqian0/dsh-desktop-plugin",
   "description": "dsh bundle: open the DeepSeek Harness Web surface in a Tauri desktop window",
   "version": "0.1.0",
   "license": "MIT",
+  "author": "aqian0",
+  "repository": "https://github.com/aqian0/dsh-desktop",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

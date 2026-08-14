@@ -3,7 +3,7 @@
   "productName": "DeepSeek Harness",
   "mainBinaryName": "dsh-desktop",
   "version": "0.1.0",
-  "identifier": "ai.deepseek.harness",
+  "identifier": "dev.aqian0.dsh-desktop",
   "build": {
     "frontendDist": "../frontend"
   },

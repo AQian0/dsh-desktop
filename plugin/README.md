@@ -1,4 +1,4 @@
-# @deepseek-ai/dsh-desktop-plugin
+# @aqian0/dsh-desktop-plugin
 
 Desktop shell bundle for DeepSeek Harness: opens the Web surface in a Tauri
 webview window. Installed as a profile plugin, `dsh --profile desktop` boots
@@ -13,7 +13,7 @@ closing the window exits the profile gracefully.
 dsh plugin --profile desktop add /path/to/dsh-desktop/plugin
 
 # Then set dsh.profile.bundles in ~/.dsh/profiles/desktop/package.json to
-# ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@deepseek-ai/dsh-desktop-plugin"]
+# ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@aqian0/dsh-desktop-plugin"]
 # The repository script does both steps for you: pnpm plugin:install
 
 # Boot: config tree = dsh-base -> dsh-web-app -> dsh-desktop-plugin -> cordis.patch.yml
@@ -28,7 +28,7 @@ mechanism as the shipped web template). Do not
 at an old version with unpublished dependencies.
 
 Equivalently, write `dsh.profile.bundles` as
-`["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@deepseek-ai/dsh-desktop-plugin"]`
+`["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@aqian0/dsh-desktop-plugin"]`
 directly - dsh has no explicit profile inheritance; inheriting a profile is
 bundle composition.
 

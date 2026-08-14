@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-A Tauri 2 desktop shell for the DeepSeek Harness Web surface. It **neither spawns nor supervises a runtime**: the desktop profile's plugin (this repository's `plugin/`, package `@deepseek-ai/dsh-desktop-plugin`) launches this binary as `dsh-desktop --attach http://127.0.0.1:<port>` once the Web runtime binds its loopback port, and the shell opens a single webview window on that URL. It contributes no application UI: the window renders the product's own Web frontend, served by the runtime over HTTP on 127.0.0.1.
+A Tauri 2 desktop shell for the DeepSeek Harness Web surface. It **neither spawns nor supervises a runtime**: the desktop profile's plugin (this repository's `plugin/`, package `@aqian0/dsh-desktop-plugin`) launches this binary as `dsh-desktop --attach http://127.0.0.1:<port>` once the Web runtime binds its loopback port, and the shell opens a single webview window on that URL. It contributes no application UI: the window renders the product's own Web frontend, served by the runtime over HTTP on 127.0.0.1.
 
 This project is **powered by DeepSeek Harness** (`dsh`) — the runtime is the parent process and the shell is the launched side; the runtime is a separate project. The codebase is **written AI-natively**.
 
@@ -47,7 +47,7 @@ The Web trust fence needs no configuration here: the window navigates to the loo
 
 ## Installing as a dsh profile plugin
 
-The repository root's `plugin/` directory is an installable bundle package (`@deepseek-ai/dsh-desktop-plugin`): its `package.json` declares `dsh.bundle.patch`, its `cordis.patch.yml` adds one `desktop-launch` row, and the host plugin spawns the shell once the web server binds, tying the profile's lifetime to the window (closing the window exits, tree disposal closes the window). dsh has no explicit profile inheritance; inheriting the web profile is bundle composition:
+The repository root's `plugin/` directory is an installable bundle package (`@aqian0/dsh-desktop-plugin`): its `package.json` declares `dsh.bundle.patch`, its `cordis.patch.yml` adds one `desktop-launch` row, and the host plugin spawns the shell once the web server binds, tying the profile's lifetime to the window (closing the window exits, tree disposal closes the window). dsh has no explicit profile inheritance; inheriting the web profile is bundle composition:
 
 ```sh
 pnpm plugin:install   # runs dsh plugin --profile desktop add ./plugin, then lists web-app in bundles
@@ -55,7 +55,7 @@ pnpm plugin:smoke     # GUI-free two-way lifetime smoke: window close -> profile
 pnpm plugin:run       # equivalent to dsh --profile desktop
 ```
 
-The resulting `~/.dsh/profiles/desktop/package.json` lists `dsh.profile.bundles` as `["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@deepseek-ai/dsh-desktop-plugin"]`; the config tree stacks in order, last write wins. `@deepseek-ai/dsh-web-app` is listed in bundles but never installed as a profile dependency - bundle resolution tries the running dsh installation first, so the Web surface always matches the installed dsh version. Shell-binary resolution order and distribution plans live in `plugin/README.md`.
+The resulting `~/.dsh/profiles/desktop/package.json` lists `dsh.profile.bundles` as `["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@aqian0/dsh-desktop-plugin"]`; the config tree stacks in order, last write wins. `@deepseek-ai/dsh-web-app` is listed in bundles but never installed as a profile dependency - bundle resolution tries the running dsh installation first, so the Web surface always matches the installed dsh version. Shell-binary resolution order and distribution plans live in `plugin/README.md`.
 
 ## Running (source-checkout development)
 

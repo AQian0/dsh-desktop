@@ -2,7 +2,7 @@
 //
 // Steps:
 //   1. `dsh plugin --profile desktop add <repo>/plugin` — initializes the
-//      profile when missing and appends @deepseek-ai/dsh-desktop-plugin to
+//      profile when missing and appends @aqian0/dsh-desktop-plugin to
 //      dsh.profile.bundles (it declares dsh.bundle).
 //   2. Ensure dsh.profile.bundles is exactly
 //      [base, web-app, dsh-desktop-plugin]: @deepseek-ai/dsh-web-app is
@@ -25,7 +25,7 @@ const manifestPath = join(profileDir, "package.json");
 const BUNDLES = [
   "@deepseek-ai/dsh-base",
   "@deepseek-ai/dsh-web-app",
-  "@deepseek-ai/dsh-desktop-plugin"
+  "@aqian0/dsh-desktop-plugin"
 ];
 
 execFileSync("dsh", ["plugin", "--profile", "desktop", "add", pluginDir], {

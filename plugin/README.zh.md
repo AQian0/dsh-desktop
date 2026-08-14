@@ -1,4 +1,4 @@
-# @deepseek-ai/dsh-desktop-plugin
+# @aqian0/dsh-desktop-plugin
 
 DeepSeek Harness 的桌面套壳 bundle:把 Web 界面开进一个 Tauri webview 窗口。
 作为 dsh profile 的插件安装后,`dsh --profile desktop` 启动 Web 运行时并在其
@@ -11,7 +11,7 @@ DeepSeek Harness 的桌面套壳 bundle:把 Web 界面开进一个 Tauri webview
 dsh plugin --profile desktop add /path/to/dsh-desktop/plugin
 
 # 然后把 ~/.dsh/profiles/desktop/package.json 的 dsh.profile.bundles 调整为
-# ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@deepseek-ai/dsh-desktop-plugin"]
+# ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@aqian0/dsh-desktop-plugin"]
 # 仓库脚本会自动完成上面两步:pnpm plugin:install
 
 # 启动:配置树 = dsh-base → dsh-web-app → dsh-desktop-plugin → cordis.patch.yml
@@ -24,7 +24,7 @@ web 模板同一机制)。不要 `dsh plugin add @deepseek-ai/dsh-web-app`——
 的 latest 标签指向依赖不完整的旧版本。
 
 等价地,把 `dsh.profile.bundles` 直接写成
-`["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@deepseek-ai/dsh-desktop-plugin"]`
+`["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@aqian0/dsh-desktop-plugin"]`
 即可——dsh 没有显式的 profile 继承,继承即 bundle 组合。
 
 **验证**:仓库自带无 GUI 的双向生命周期冒烟 `pnpm plugin:smoke`——窗口关闭

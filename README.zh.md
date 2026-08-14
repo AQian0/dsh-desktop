@@ -3,7 +3,7 @@
 [English](README.md) | 中文
 
 DeepSeek Harness Web 界面的 Tauri 2 桌面套壳。它自己**不启动也不监督任何运行时**：
-由 desktop profile 的插件（本仓库 `plugin/`，包 `@deepseek-ai/dsh-desktop-plugin`）在 Web
+由 desktop profile 的插件（本仓库 `plugin/`，包 `@aqian0/dsh-desktop-plugin`）在 Web
 运行时绑定回环端口后，以 `dsh-desktop --attach http://127.0.0.1:<port>` 拉起本二进制；
 套壳只在该 URL 上打开一个 webview 窗口。它不提供任何应用界面：窗口渲染产品自身的 Web
 前端，由运行时通过 127.0.0.1 上的 HTTP 服务提供。
@@ -67,7 +67,7 @@ profile。插件在 web server 绑定后拉起套壳；窗口关闭请求 profil
 
 ## 安装为 dsh profile 插件
 
-仓库根目录 `plugin/` 是可安装的 bundle 包（`@deepseek-ai/dsh-desktop-plugin`）：`package.json` 声明
+仓库根目录 `plugin/` 是可安装的 bundle 包（`@aqian0/dsh-desktop-plugin`）：`package.json` 声明
 `dsh.bundle.patch`，`cordis.patch.yml` 增加一行 `desktop-launch`，宿主插件在 web server 绑定后拉起套壳，
 并把 profile 生命周期与窗口绑定（关窗即退出、树释放即关窗）。dsh 没有显式的 profile 继承，“继承 web
 profile”即 bundle 组合：
@@ -79,7 +79,7 @@ pnpm plugin:run       # 等价于 dsh --profile desktop
 ```
 
 生成的 `~/.dsh/profiles/desktop/package.json` 的 `dsh.profile.bundles` 为
-`["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@deepseek-ai/dsh-desktop-plugin"]`；配置树按序叠加，
+`["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@aqian0/dsh-desktop-plugin"]`；配置树按序叠加，
 后写者胜。`@deepseek-ai/dsh-web-app` 只列入 bundles、不作为 profile 依赖安装——bundle 解析先走运行中的
 dsh 安装目录，Web 界面永远与所装 dsh 版本一致。套壳二进制解析顺序与发布计划见 `plugin/README.zh.md`。
 

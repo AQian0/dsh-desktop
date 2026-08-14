@@ -1,10 +1,12 @@
 {
-  "name": "@deepseek-ai/dsh-desktop",
+  "name": "@aqian0/dsh-desktop",
   "description": "Desktop shell that wraps the dsh web runtime (built with Tauri 2)",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "license": "MIT",
+  "author": "aqian0",
+  "repository": "https://github.com/aqian0/dsh-desktop",
   "scripts": {
     "shell:build": "cargo build --manifest-path src-tauri/Cargo.toml",
     "build": "tauri build",

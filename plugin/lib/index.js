@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 //#region lib/index.js
 /**
-* @deepseek-ai/dsh-desktop-plugin — desktop-launch host plugin. The bundle
+* @aqian0/dsh-desktop-plugin — desktop-launch host plugin. The bundle
 * patch adds one row that mounts after the web server binds; this plugin
 * spawns the desktop shell binary attached to the loopback URL and ties the
 * profile's lifetime to the window in both directions:
@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 * The shell binary resolves, in precedence order, from the row's `bin`
 * config, DSH_DESKTOP_BIN, a binary bundled beside this package (future
 * per-platform optionalDependencies), then `dsh-desktop` on PATH.
-* @module @deepseek-ai/dsh-desktop-plugin
+* @module @aqian0/dsh-desktop-plugin
 */
 /** Stable Cordis plugin name. */
 const name = "desktop-launch";

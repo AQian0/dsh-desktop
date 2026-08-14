@@ -57,8 +57,8 @@ if (!existsSync(manifestPath)) {
   throw new Error("profile " + PROFILE + " is not installed; run pnpm plugin:install first");
 }
 const bundles = JSON.parse(readFileSync(manifestPath, "utf8")).dsh?.profile?.bundles ?? [];
-if (!bundles.includes("@deepseek-ai/dsh-desktop-plugin")) {
-  throw new Error("profile " + PROFILE + " bundles lack @deepseek-ai/dsh-desktop-plugin; run pnpm plugin:install first");
+if (!bundles.includes("@aqian0/dsh-desktop-plugin")) {
+  throw new Error("profile " + PROFILE + " bundles lack @aqian0/dsh-desktop-plugin; run pnpm plugin:install first");
 }
 
 const dir = mkdtempSync(join(tmpdir(), "dsh-desktop-smoke-"));
