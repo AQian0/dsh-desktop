@@ -16,7 +16,7 @@
 //! The window renders the product's own Web surface; this crate contributes
 //! only process lifetime coupling, never UI.
 
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 use url::Url;
 
 fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result<()> {

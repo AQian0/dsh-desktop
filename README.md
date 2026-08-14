@@ -6,6 +6,19 @@ A Tauri 2 desktop shell for the DeepSeek Harness Web surface. It **neither spawn
 
 This project is **powered by DeepSeek Harness** (`dsh`) — the runtime is the parent process and the shell is the launched side; the runtime is a separate project. The codebase is **written AI-natively**.
 
+## Quick start
+
+```sh
+pnpm install                 # installs dependencies (the Tauri CLI)
+pnpm shell:build             # builds the debug shell binary (src-tauri/target/debug/dsh-desktop)
+pnpm plugin:install          # installs the desktop profile (this plugin included; safe to re-run)
+pnpm plugin:smoke            # (optional) two-way lifetime smoke, no GUI
+pnpm plugin:run              # boots dsh --profile desktop and opens the desktop window
+```
+
+To use another port: `dsh --profile desktop --port 3081` (any web-profile flag works).
+After pulling changes, re-run `pnpm shell:build && pnpm plugin:install` (the install is idempotent).
+
 ## How it works
 
 The plugin's `desktop-launch` row spawns this binary with the loopback URL once the web server binds, then ties the lifetime in both directions:
@@ -47,14 +60,18 @@ The resulting `~/.dsh/profiles/desktop/package.json` lists `dsh.profile.bundles`
 ## Running (source-checkout development)
 
 ```sh
-pnpm install   # installs the Tauri CLI
-pnpm dev       # builds the shell in dev mode (tauri dev)
+pnpm install        # installs the Tauri CLI
+pnpm shell:build    # builds the debug shell binary
 
 # point the shell at the debug binary, launched by the desktop profile
 DSH_DESKTOP_BIN=src-tauri/target/debug/dsh-desktop dsh --profile desktop
 ```
 
-Running the binary directly without a valid `--attach` prints guidance and shows the static error window: the shell can only be launched by the profile plugin.
+If the profile installed by `pnpm plugin:install` cannot find the shell on PATH, pin the binary by
+writing `config: { bin: <absolute path> }` for the `desktop-launch` row in
+`~/.dsh/profiles/desktop/cordis.patch.yml`. Running the binary directly without a valid `--attach`
+prints guidance and shows the static error window: the shell can only be launched by the profile
+plugin.
 
 ## Building a release bundle
 

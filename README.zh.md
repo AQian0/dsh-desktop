@@ -11,6 +11,19 @@ DeepSeek Harness Web 界面的 Tauri 2 桌面套壳。它自己**不启动也不
 本项目由 **DeepSeek Harness（dsh）驱动**——运行时是父进程、套壳是被拉起的一方，运行时是独立项目；
 代码由 **AI 原生编写**。
 
+## 快速开始
+
+```sh
+pnpm install                 # 安装依赖（Tauri CLI）
+pnpm shell:build             # 构建 debug 套壳二进制（src-tauri/target/debug/dsh-desktop）
+pnpm plugin:install          # 安装 desktop profile（含本插件；可重复执行）
+pnpm plugin:smoke            # （可选）双向生命周期冒烟，无需 GUI
+pnpm plugin:run              # 启动：等价于 dsh --profile desktop，弹出桌面窗口
+```
+
+想换端口：`dsh --profile desktop --port 3081`（web profile 的参数原样可用）。
+更新仓库后重跑 `pnpm shell:build && pnpm plugin:install` 即可（install 幂等）。
+
 ## 工作原理
 
 插件的 `desktop-launch` 行在 web server 绑定后 spawn 本二进制并传入回环 URL，然后双向绑定生命周期：
@@ -73,14 +86,17 @@ dsh 安装目录，Web 界面永远与所装 dsh 版本一致。套壳二进制�
 ## 运行（源码检出的开发形态）
 
 ```sh
-pnpm install   # 安装 Tauri CLI
-pnpm dev       # 以开发模式构建套壳（tauri dev）
+pnpm install        # 安装 Tauri CLI
+pnpm shell:build    # 构建 debug 套壳二进制
 
 # 套壳指向 debug 二进制，由 desktop profile 拉起
 DSH_DESKTOP_BIN=src-tauri/target/debug/dsh-desktop dsh --profile desktop
 ```
 
-直接运行二进制而不带 `--attach` 会打印提示并显示静态错误窗口：套壳只能经 profile 插件拉起。
+`pnpm plugin:install` 装好的 profile 默认在 PATH 上找不到套壳时，也可在 profile 的
+`~/.dsh/profiles/desktop/cordis.patch.yml` 里给 `desktop-launch` 行写 `config: { bin: <绝对路径> }`
+固定二进制位置。直接运行二进制而不带 `--attach` 会打印提示并显示静态错误窗口：套壳只能经 profile
+插件拉起。
 
 ## 构建发行包
 
