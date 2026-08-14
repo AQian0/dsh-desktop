@@ -108,11 +108,29 @@ pnpm build:no-bundle   # 仅发布二进制
 安装包位于 `src-tauri/target/release/bundle`（macOS 为 `.app`/`.dmg`，Windows 为 `.msi`/`.exe`，Linux 为
 `.deb`/`.rpm`/`AppImage`）。安装包未签名——见[已知限制](#已知限制与后续工作)。
 
+## 打包 npm 分发（插件装上即跑）
+
+插件以 per-platform optionalDependencies 随包分发套壳二进制，用户只需
+`dsh plugin --profile desktop add @aqian0/dsh-desktop-plugin`，无需任何环境变量：
+
+```sh
+pnpm package:current -- --build   # release 构建并把二进制装入 platforms/<当前平台>-<arch>/bin/
+                                  # 然后在 dist/ 下打包出两个 tgz：插件 + 当前平台包
+```
+
+发布时**同版本一起发布**插件与全部平台包（`platforms/` 下的 4 个目标）：
+
+```sh
+npm publish dist/<插件 tgz> dist/<各平台 tgz> ...
+```
+
+其他平台的二进制需要在对应操作系统上各跑一次 `pnpm package:current -- --build`（或由 CI 矩阵完成）。
+
 ## 配置
 
 | 变量 | 默认值 | 含义 |
 |---|---|---|
-| `DSH_DESKTOP_BIN` | 未设置 | 插件拉起套壳时定位可执行文件；未设置则回落到行的 `bin` 配置、随包二进制或 PATH。 |
+| `DSH_DESKTOP_BIN` | 未设置 | 插件拉起套壳时定位可执行文件；未设置则回落到行的 `bin` 配置、per-platform 随包二进制或 PATH。 |
 
 ## 常见问题
 
@@ -129,8 +147,8 @@ pnpm build:no-bundle   # 仅发布二进制
   应用分发的方案留待后续。
 - **无 macOS 代码签名与公证** — `pnpm build` 产出未签名安装包；在本地使用之外分发需要签名凭据。
 - **错误详情留在 stderr** — 失败窗口是静态的；从终端启动可读到诊断信息。
-- **npm 分发的 per-platform 二进制未实现** — 插件包当前靠 `DSH_DESKTOP_BIN` 或 PATH 定位套壳；以
-  per-platform optionalDependencies 随包分发二进制待后续。
+- **多平台二进制需要各 OS 的构建矩阵** — 当前平台的打包已实现（`pnpm package:current`）；其他平台的
+  tgz 需要在对应操作系统上构建（或由 CI 矩阵完成）。
 
 ## 许可证与声明
 

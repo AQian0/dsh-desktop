@@ -11,6 +11,7 @@
     "shell:build": "cargo build --manifest-path src-tauri/Cargo.toml",
     "build": "tauri build",
     "build:no-bundle": "tauri build --no-bundle",
+    "package:current": "node scripts/package-current-platform.mjs",
     "icon": "tauri icon",
     "plugin:install": "node scripts/install-profile.mjs",
     "plugin:smoke": "node scripts/smoke-lifetime.mjs",

@@ -82,11 +82,31 @@ pnpm build:no-bundle   # release binary only
 
 Installers land under `src-tauri/target/release/bundle` (`.app`/`.dmg` on macOS, `.msi`/`.exe` on Windows, `.deb`/`.rpm`/`AppImage` on Linux). The bundles are unsigned — see [Known Limitations](#known-limitations-and-deferred-work).
 
+## Packaging for npm (install and run)
+
+The plugin ships the shell binary as per-platform optionalDependencies, so users need only
+`dsh plugin --profile desktop add @aqian0/dsh-desktop-plugin` — no environment variables:
+
+```sh
+pnpm package:current -- --build   # release build, then copies the binary into
+                                  # platforms/<current-platform>-<arch>/bin/ and packs two
+                                  # tarballs into dist/: the plugin + the current platform package
+```
+
+Publish the plugin and ALL platform packages (the 4 targets under `platforms/`) together, at the
+same version:
+
+```sh
+npm publish dist/<plugin tgz> dist/<platform tgz> ...
+```
+
+Binaries for other platforms must be built on their own OS (or by a CI matrix).
+
 ## Configuration
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `DSH_DESKTOP_BIN` | unset | The plugin's path to the shell executable; unset falls back to the row's `bin` config, a bundled binary, or PATH. |
+| `DSH_DESKTOP_BIN` | unset | The plugin's path to the shell executable; unset falls back to the row's `bin` config, the per-platform bundled binary, or PATH. |
 
 ## Troubleshooting
 
@@ -100,7 +120,7 @@ Installers land under `src-tauri/target/release/bundle` (`.app`/`.dmg` on macOS,
 - **The runtime is not bundled** — the shell is attach-only and depends on a separately installed dsh with the desktop profile; a single-app distribution that embeds the runtime is deferred work.
 - **No macOS code signing or notarization** — `pnpm build` produces unsigned bundles; distributing them outside local use needs signing credentials.
 - **Error details stay on stderr** — the failure window is static; launch from a terminal to read the diagnostics.
-- **Per-platform npm binaries are not implemented** — the plugin package locates the shell via `DSH_DESKTOP_BIN` or PATH; shipping per-platform binaries through optionalDependencies is deferred work.
+- **Multi-platform binaries need a per-OS build matrix** — packaging the current platform is implemented (`pnpm package:current`); tarballs for the other platforms must be built on their own OS (or by a CI matrix).
 
 ## License and Notices
 

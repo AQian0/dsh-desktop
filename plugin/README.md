@@ -44,11 +44,26 @@ The desktop-launch row resolves the shell executable in this order:
 1. the row's `bin` config (pin it by writing `config: { bin: ... }` for the
    `desktop-launch` row in `~/.dsh/profiles/desktop/cordis.patch.yml`);
 2. the `DSH_DESKTOP_BIN` environment variable (source-checkout development);
-3. a `bin/dsh-desktop` shipped beside this package (planned per-platform
-   optionalDependencies);
-4. `dsh-desktop` on PATH.
+3. the per-platform bundled binary: `bin/dsh-desktop` inside
+   `@aqian0/dsh-desktop-plugin-<platform>-<arch>` (this package's
+   optionalDependency) - registry installs work out of the box;
+4. a `bin/dsh-desktop` shipped beside this package (local packaging);
+5. `dsh-desktop` on PATH.
 
 Resolution failures fail loud: a stderr message and exit code 1.
+
+## Packaging and publishing
+
+```sh
+pnpm package:current -- --build   # release build, then copies the binary into the
+                                  # current platform's package and packs two tarballs into
+                                  # dist/: the plugin + the current platform package
+```
+
+Publish the plugin and ALL platform packages (the 4 targets under `platforms/`)
+together, at the same version, so the plugin's optionalDependencies resolve on
+every supported platform; tarballs for other platforms must be built on their
+own OS (or by a CI matrix).
 
 ## Relationship to the shell binary
 

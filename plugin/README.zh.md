@@ -38,10 +38,23 @@ desktop-launch 行按以下顺序解析套壳可执行文件:
 1. 行的 `bin` 配置(在 `~/.dsh/profiles/desktop/cordis.patch.yml` 里对
    `desktop-launch` 行写 `config: { bin: ... }` 即可固定);
 2. 环境变量 `DSH_DESKTOP_BIN`(源码检出的开发路径);
-3. 随包分发的 `bin/dsh-desktop`(规划中的 per-platform optionalDependencies);
-4. PATH 上的 `dsh-desktop`。
+3. per-platform 随包二进制:`@aqian0/dsh-desktop-plugin-<platform>-<arch>`
+   (本包的 optionalDependency)的 `bin/dsh-desktop`——registry 安装即开箱即用;
+4. 紧挨本包的 `bin/dsh-desktop`(本地打包形态);
+5. PATH 上的 `dsh-desktop`。
 
 解析失败即 fail-loud:stderr 报错并退出码 1。
+
+## 打包与发布
+
+```sh
+pnpm package:current -- --build   # release 构建并把二进制装入当前平台的包,
+                                  # 在 dist/ 打出插件 + 平台包两个 tgz
+```
+
+发布时插件与 `platforms/` 下全部平台包(4 个目标)**同版本一起发布**,插件包的
+optionalDependencies 才能在每个平台解析到二进制;其他平台的 tgz 在对应 OS 上
+构建(或 CI 矩阵)。
 
 ## 与套壳二进制的关系
 

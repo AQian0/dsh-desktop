@@ -18,6 +18,12 @@
     "README.md",
     "README.zh.md"
   ],
+  "optionalDependencies": {
+    "@aqian0/dsh-desktop-plugin-darwin-arm64": "0.1.0",
+    "@aqian0/dsh-desktop-plugin-darwin-x64": "0.1.0",
+    "@aqian0/dsh-desktop-plugin-linux-x64": "0.1.0",
+    "@aqian0/dsh-desktop-plugin-win32-x64": "0.1.0"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

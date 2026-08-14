@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,8 +24,9 @@ import { fileURLToPath } from "node:url";
 *   runs the effect cleanup (verified end to end on dsh).
 *
 * The shell binary resolves, in precedence order, from the row's `bin`
-* config, DSH_DESKTOP_BIN, a binary bundled beside this package (future
-* per-platform optionalDependencies), then `dsh-desktop` on PATH.
+* config, DSH_DESKTOP_BIN, the per-platform optionalDependency
+* (`@aqian0/dsh-desktop-plugin-<platform>-<arch>`), a binary bundled beside
+* this package, then `dsh-desktop` on PATH.
 * @module @aqian0/dsh-desktop-plugin
 */
 /** Stable Cordis plugin name. */
@@ -35,6 +37,26 @@ const inject = ["webServer", "appExit"];
 const LOOPBACK_HOST = "127.0.0.1";
 /** The plugin package root, for locating a bundled shell binary. */
 const PACKAGE_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+/** Require hook scoped to this package, for locating the platform package. */
+const require = createRequire(import.meta.url);
+/** The platform binary package for the running platform and architecture. */
+const PLATFORM_PACKAGE = `@aqian0/dsh-desktop-plugin-${process.platform}-${process.arch}`;
+/**
+* Locate the shell binary shipped by the platform package
+* (`@aqian0/dsh-desktop-plugin-<platform>-<arch>`, an optionalDependency of
+* this package). Returns undefined when that package is not installed (e.g.
+* a development install, or a platform we do not ship).
+* @returns the absolute binary path, or undefined.
+*/
+function platformBinaryPath() {
+	try {
+		const dir = dirname(require.resolve(`${PLATFORM_PACKAGE}/package.json`));
+		const bin = join(dir, "bin", process.platform === "win32" ? "dsh-desktop.exe" : "dsh-desktop");
+		return existsSync(bin) ? bin : void 0;
+	} catch {
+		return void 0;
+	}
+}
 /**
 * Exit-request grace: ctx.appExit triggers the tree dispose (session flush)
 * and sets process.exitCode, but launcher-level handles (the live patch
@@ -54,6 +76,8 @@ function resolveBin(config) {
 	if (explicit) return explicit;
 	const fromEnv = process.env.DSH_DESKTOP_BIN;
 	if (fromEnv) return fromEnv;
+	const fromPlatform = platformBinaryPath();
+	if (fromPlatform !== void 0) return fromPlatform;
 	const bundled = join(PACKAGE_ROOT, "bin", process.platform === "win32" ? "dsh-desktop.exe" : "dsh-desktop");
 	if (existsSync(bundled)) return bundled;
 	return "dsh-desktop";
