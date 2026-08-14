@@ -2,54 +2,59 @@
 
 English | [中文](README.zh.md)
 
-A Tauri 2 desktop shell for the DeepSeek Harness Web surface. The shell spawns one harness runtime (`dsh web` by default), waits for the loopback URL the runtime prints on stdout, and opens a single webview window on that URL. It contributes no application UI: the window renders the product's own Web frontend, served by the runtime over HTTP on 127.0.0.1.
+A Tauri 2 desktop shell for the DeepSeek Harness Web surface. It **neither spawns nor supervises a runtime**: the desktop profile's plugin (this repository's `plugin/`, package `@deepseek-ai/dsh-desktop-plugin`) launches this binary as `dsh-desktop --attach http://127.0.0.1:<port>` once the Web runtime binds its loopback port, and the shell opens a single webview window on that URL. It contributes no application UI: the window renders the product's own Web frontend, served by the runtime over HTTP on 127.0.0.1.
 
-This project is **powered by DeepSeek Harness** (`dsh`) — it launches and supervises the runtime, which is a separate project. The codebase is **written AI-natively**.
+This project is **powered by DeepSeek Harness** (`dsh`) — the runtime is the parent process and the shell is the launched side; the runtime is a separate project. The codebase is **written AI-natively**.
 
 ## How it works
 
-On startup the shell launches the command selected by `DSH_BIN` plus `DSH_ARGS` (default `dsh web`), forces `--host 127.0.0.1`, and appends `--port <port>` when `DSH_PORT` is set. It scans the child's stdout for a loopback URL (`dsh web: http://127.0.0.1:<port>`) and opens the webview window only once that URL appears; child stdout lines are echoed with a `[dsh]` prefix and stderr is inherited. If the runtime exits before publishing a URL, or no URL appears within 60 seconds, the shell opens a static error window instead.
+The plugin's `desktop-launch` row spawns this binary with the loopback URL once the web server binds, then ties the lifetime in both directions:
 
-Closing the last window terminates the runtime: SIGTERM first so the harness drains (session flush, terminal restore), then SIGKILL after a five-second grace window; on Windows the shell kills the process tree. If the runtime dies on its own, the shell closes.
+- **the window closes** (the user closes the last window): the shell process exits and the plugin requests a graceful profile exit through `ctx.appExit` (session flush happens during the harness's tree disposal; the plugin carries a bounded 5-second force-exit grace against launcher-level handles holding the event loop);
+- **the runtime dies first** (signal, crash, kill -9): three parallel links close the window — the plugin's `ctx.effect` cleanup SIGTERMs the shell as the tree disposes, the shell's own stdin pipe EOF, and the unix parent-reparenting poll (macOS rewires the app's stdio during bootstrap, so the poll is the load-bearing link there). The window never outlives its runtime.
 
 The Web trust fence needs no configuration here: the window navigates to the loopback origin, so every request presents a loopback `Host`.
 
 ## Design notes
 
-**Why a shell, not a second UI.** The Web host deliberately serves browsers only — a webview loading the built `dist` over `file://` would not be same-origin with the runtime's `/api` — so the shell supervises the existing runtime over its own loopback HTTP: one process, one window, and no second copy of the UI. No Tauri API is exposed to the page, so no capability grants are needed.
+**Why a shell, not a second UI.** The Web host deliberately serves browsers only — a webview loading the built `dist` over `file://` would not be same-origin with the runtime's `/api` — so the shell attaches to the existing runtime over its own loopback HTTP: one process, one window, and no second copy of the UI. No Tauri API is exposed to the page, so no capability grants are needed.
 
-**Alternatives rejected.** Loading `dist` over `file://` (breaks the same-origin trust model and duplicates the connection layer); a fixed port plus TCP polling (the printed URL line is the runtime's own single source of truth); a Cordis UI bundle inside the runtime (window lifecycle and process supervision are launcher concerns, kept out of the runtime so each side stays independently patchable); bundling the runtime into the app (deferred to the harness's single-file distribution work).
+**The runtime is the parent; the window lifecycle stays inside the shell.** `plugin/` packages the shell as an installable dsh bundle: the desktop profile's bundles list `@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, and this plugin in order, so it fully inherits the Web profile. The plugin spawns the shell once the web server binds, the closing window requests a profile exit, and tree disposal closes the window in return. Window lifecycle and parent-death detection stay inside the shell binary; the runtime merely gains a launcher role.
 
-**Verification.** `cargo test` pins URL scanning (LAN suffixes and portless URLs are ignored), env-command assembly, spawn–terminate–reap, and early-exit reporting. The assembled smoke runs the debug binary against a source-launched `dsh web` on a fresh port and checks the published URL, a 200 with `window.__DSH_BOOT__` injected, and that SIGTERM to the shell releases the port.
+**Alternatives rejected.** Loading `dist` over `file://` (breaks the same-origin trust model and duplicates the connection layer); a Cordis UI bundle inside the runtime (the window lifecycle belongs to the shell, not the runtime; keeping it out lets each side stay independently patchable); the shell spawning and supervising the runtime instead (the old supervisor shape: the runtime became a child, so the exit ladder and stdout URL scanning lived in the shell — with the plugin shape the runtime is naturally the parent and all of that machinery was deleted); bundling the runtime into the app (deferred to the harness's single-file distribution work).
+
+**Verification.** `cargo test` pins attach-argument parsing (absent, non-loopback, portless, malformed) and loopback URL token scanning (LAN suffixes and portless URLs are ignored); `pnpm plugin:smoke` regression-tests both lifetime directions GUI-free (window close -> the profile exits with code 0; SIGTERM to dsh -> tree disposal -> the plugin's effect cleanup kills the shell); a real-binary smoke verifies the shell exits with its parent (within a second on macOS).
 
 ## Prerequisites
 
-- A DeepSeek Harness runtime — one of:
-  - an installed `dsh` CLI (`npm i -g @deepseek-ai/dsh`), used by the default `dsh web` command; or
-  - a source checkout of [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) with built Web artifacts (`pnpm run build`), for the source-checkout command below.
+- An installed `dsh` CLI (`npm i -g @deepseek-ai/dsh`) with the desktop profile installed as described below.
 - Node.js and pnpm, for this project's scripts and the Tauri CLI.
 - The Rust toolchain (via [rustup](https://rustup.rs/)), for building the shell.
 - Tauri's platform dependencies: Xcode Command Line Tools on macOS, WebView2 plus the MSVC build tools on Windows, and webkit2gtk-4.1 (or the distro equivalent) on Linux — see [Tauri's prerequisites](https://tauri.app/start/prerequisites/).
 
-## Running
+## Installing as a dsh profile plugin
+
+The repository root's `plugin/` directory is an installable bundle package (`@deepseek-ai/dsh-desktop-plugin`): its `package.json` declares `dsh.bundle.patch`, its `cordis.patch.yml` adds one `desktop-launch` row, and the host plugin spawns the shell once the web server binds, tying the profile's lifetime to the window (closing the window exits, tree disposal closes the window). dsh has no explicit profile inheritance; inheriting the web profile is bundle composition:
+
+```sh
+pnpm plugin:install   # runs dsh plugin --profile desktop add ./plugin, then lists web-app in bundles
+pnpm plugin:smoke     # GUI-free two-way lifetime smoke: window close -> profile exit; runtime death -> shell close
+pnpm plugin:run       # equivalent to dsh --profile desktop
+```
+
+The resulting `~/.dsh/profiles/desktop/package.json` lists `dsh.profile.bundles` as `["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@deepseek-ai/dsh-desktop-plugin"]`; the config tree stacks in order, last write wins. `@deepseek-ai/dsh-web-app` is listed in bundles but never installed as a profile dependency - bundle resolution tries the running dsh installation first, so the Web surface always matches the installed dsh version. Shell-binary resolution order and distribution plans live in `plugin/README.md`.
+
+## Running (source-checkout development)
 
 ```sh
 pnpm install   # installs the Tauri CLI
-pnpm dev       # builds the shell in dev mode and launches it
+pnpm dev       # builds the shell in dev mode (tauri dev)
+
+# point the shell at the debug binary, launched by the desktop profile
+DSH_DESKTOP_BIN=src-tauri/target/debug/dsh-desktop dsh --profile desktop
 ```
 
-`pnpm dev` spawns `dsh web` from PATH and opens the window once the runtime prints its URL — no window appears before that. The runtime's stdout is echoed on the launching terminal with a `[dsh]` prefix; watch that terminal if the window is slow to appear.
-
-To develop against a harness source checkout instead:
-
-```sh
-DSH_BIN=node \
-  DSH_ARGS="--import tsx/esm <checkout>/apps/cli/src/bin.ts web" \
-  DSH_PORT=3180 \
-  pnpm dev
-```
-
-`DSH_PORT` defaults to the harness default (3080); pick another port when something already serves 3080.
+Running the binary directly without a valid `--attach` prints guidance and shows the static error window: the shell can only be launched by the profile plugin.
 
 ## Building a release bundle
 
@@ -64,25 +69,21 @@ Installers land under `src-tauri/target/release/bundle` (`.app`/`.dmg` on macOS,
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `DSH_BIN` | `dsh` | The executable to spawn. |
-| `DSH_ARGS` | `web` | Arguments appended after `DSH_BIN`, split on whitespace. |
-| `DSH_PORT` | unset | When set, `--port <value>` is appended. |
-
-The split-on-whitespace parsing cannot quote arguments; point `DSH_BIN` at a wrapper script when an argument contains spaces.
+| `DSH_DESKTOP_BIN` | unset | The plugin's path to the shell executable; unset falls back to the row's `bin` config, a bundled binary, or PATH. |
 
 ## Troubleshooting
 
-- **The window shows the static error page** — the runtime failed before publishing its URL, or the 60-second wait timed out. Launch from a terminal and read the runtime's stderr.
+- **The window shows the static error page** — the binary was run directly without a valid `--attach <url>`. Launch from a terminal to read the stderr hint; the normal entry is `dsh --profile desktop` (the plugin launches the shell).
 - **Build fails with `failed to read plugin permissions … No such file or directory`** — the repository was moved or renamed after a previous build, leaving stale absolute paths in the build cache. Run `cargo clean` in `src-tauri` (or delete `src-tauri/target`) and retry.
-- **Port 3080 is already in use** — set `DSH_PORT` to a free port.
-- **`dsh: command not found`** — install the CLI (`npm i -g @deepseek-ai/dsh`) or point `DSH_BIN` at your runtime.
+- **`dsh: command not found`** — install the CLI (`npm i -g @deepseek-ai/dsh`).
+- **`pnpm plugin:smoke` says the profile is not installed** — run `pnpm plugin:install` first.
 
 ## Known Limitations and Deferred Work
 
-- **The runtime is not bundled** — the shell spawns a separately installed or built harness; a single-app distribution that embeds the runtime is deferred work.
-- **The shutdown ladder is untested on Windows** — SIGTERM draining is Unix-only; Windows uses `taskkill /T /F`.
+- **The runtime is not bundled** — the shell is attach-only and depends on a separately installed dsh with the desktop profile; a single-app distribution that embeds the runtime is deferred work.
 - **No macOS code signing or notarization** — `pnpm build` produces unsigned bundles; distributing them outside local use needs signing credentials.
-- **Error details stay on stderr** — the failure window is static; launch from a terminal to read the runtime's diagnostics.
+- **Error details stay on stderr** — the failure window is static; launch from a terminal to read the diagnostics.
+- **Per-platform npm binaries are not implemented** — the plugin package locates the shell via `DSH_DESKTOP_BIN` or PATH; shipping per-platform binaries through optionalDependencies is deferred work.
 
 ## License and Notices
 
@@ -90,7 +91,7 @@ MIT License — see [LICENSE](LICENSE).
 
 ### DeepSeek Harness notice
 
-This project is powered by [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): the shell launches and supervises a dsh runtime as a child process. The runtime is a separate project distributed under the MIT License, Copyright (c) 2026 DeepSeek; it is not bundled in or distributed with this repository.
+This project is powered by [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): the shell is launched by a dsh runtime through the desktop profile plugin and attaches to the runtime's own loopback Web service; it neither bundles nor distributes the runtime. The runtime is a separate project distributed under the MIT License, Copyright (c) 2026 DeepSeek.
 
 The application icon under `icons-src/app-icon.svg` and `src-tauri/icons/` is derived from the DeepSeek Harness Web favicon glyph ([apps/web/public/favicon.svg](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/web/public/favicon.svg)), used under that same MIT License.
 

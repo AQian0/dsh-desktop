@@ -9,7 +9,10 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "build:no-bundle": "tauri build --no-bundle",
-    "icon": "tauri icon"
+    "icon": "tauri icon",
+    "plugin:install": "node scripts/install-profile.mjs",
+    "plugin:smoke": "node scripts/smoke-lifetime.mjs",
+    "plugin:run": "dsh --profile desktop"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.0"
