@@ -48,7 +48,7 @@ jobs:
           - slug: win32-x64
             os: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Tauri system dependencies (Linux)
         if: runner.os == 'Linux'
@@ -64,15 +64,15 @@ jobs:
 
       # Node only runs the packaging script and npm pack; the Rust build
       # itself needs no pnpm install (build.rs drives tauri-build directly).
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Build release binary and pack platform package
         run: node scripts/package-current-platform.mjs --build
 
       - name: Upload platform tarball
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-${{ matrix.slug }}
           path: dist/*${{ matrix.slug }}*.tgz
@@ -82,11 +82,11 @@ jobs:
     name: plugin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       # npm does not create a missing pack-destination (fails with ENOENT,
       # exit 254), unlike the platform legs where the packaging script
@@ -97,7 +97,7 @@ jobs:
           npm pack ./plugin --pack-destination dist-plugin
 
       - name: Upload plugin tarball
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-plugin
           path: dist-plugin/*.tgz
