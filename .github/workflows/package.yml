@@ -1,0 +1,99 @@
+# Multi-platform packaging for npm.
+#
+# Manual trigger only: Actions → package → Run workflow, or
+# `gh workflow run package`. Each matrix leg builds the Tauri shell binary
+# for one platform (cargo build --release — no Tauri CLI needed), copies it
+# into platforms/<slug>/bin/ via scripts/package-current-platform.mjs and
+# uploads the packed platform tarball as an artifact. A separate leg packs
+# the platform-independent plugin.
+#
+# After a run, fetch all five tarballs locally:
+#
+#   gh run download <run-id> --dir dist
+#   # → dist/npm-darwin-arm64/*.tgz, dist/npm-plugin/*.tgz, ...
+#
+# Publishing to npm stays manual: publish the four platform tarballs first,
+# then dist/npm-plugin/*.tgz last.
+
+name: package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  platform:
+    name: ${{ matrix.slug }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macos-13 (the old Intel image) was retired; macos-15-intel is the
+          # Intel replacement, available until August 2027. After that,
+          # cross-compile x86_64-apple-darwin on the arm64 image instead.
+          - slug: darwin-arm64
+            os: macos-14
+          - slug: darwin-x64
+            os: macos-15-intel
+          - slug: linux-x64
+            os: ubuntu-latest
+          - slug: win32-x64
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Tauri system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libayatana-appindicator3-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # Node only runs the packaging script and npm pack; the Rust build
+      # itself needs no pnpm install (build.rs drives tauri-build directly).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build release binary and pack platform package
+        run: node scripts/package-current-platform.mjs --build
+
+      - name: Upload platform tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-${{ matrix.slug }}
+          path: dist/*${{ matrix.slug }}*.tgz
+          if-no-files-found: error
+
+  plugin:
+    name: plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pack plugin package
+        run: npm pack ./plugin --pack-destination dist-plugin
+
+      - name: Upload plugin tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-plugin
+          path: dist-plugin/*.tgz
+          if-no-files-found: error

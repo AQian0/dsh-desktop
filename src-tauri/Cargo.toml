@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Desktop shell that wraps the DeepSeek Harness web runtime (built with Tauri 2)"
 license = "MIT"
 edition = "2021"
+authors = ["aqian0"]
+repository = "https://github.com/aqian0/dsh-desktop"
 
 [lib]
 name = "dsh_desktop_lib"

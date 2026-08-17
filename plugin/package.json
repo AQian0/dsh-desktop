@@ -1,0 +1,32 @@
+{
+  "name": "@aqian0/dsh-desktop-plugin",
+  "description": "dsh bundle: open the DeepSeek Harness Web surface in a Tauri desktop window",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "aqian0",
+  "repository": "https://github.com/aqian0/dsh-desktop",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md"
+  ],
+  "optionalDependencies": {
+    "@aqian0/dsh-desktop-plugin-darwin-arm64": "0.1.0",
+    "@aqian0/dsh-desktop-plugin-darwin-x64": "0.1.0",
+    "@aqian0/dsh-desktop-plugin-linux-x64": "0.1.0",
+    "@aqian0/dsh-desktop-plugin-win32-x64": "0.1.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

@@ -1,15 +1,21 @@
 {
-  "name": "@deepseek-ai/dsh-desktop",
+  "name": "@aqian0/dsh-desktop",
   "description": "Desktop shell that wraps the dsh web runtime (built with Tauri 2)",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "license": "MIT",
+  "author": "aqian0",
+  "repository": "https://github.com/aqian0/dsh-desktop",
   "scripts": {
-    "dev": "tauri dev",
+    "shell:build": "cargo build --manifest-path src-tauri/Cargo.toml",
     "build": "tauri build",
     "build:no-bundle": "tauri build --no-bundle",
-    "icon": "tauri icon"
+    "package:current": "node scripts/package-current-platform.mjs",
+    "icon": "tauri icon",
+    "plugin:install": "node scripts/install-profile.mjs",
+    "plugin:smoke": "node scripts/smoke-lifetime.mjs",
+    "plugin:run": "dsh --profile desktop"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.0"

@@ -1,0 +1,19 @@
+# The @aqian0/dsh-desktop-plugin bundle patch: opens the DeepSeek
+# Harness Web surface in a Tauri desktop window. It rides over dsh-base +
+# dsh-web-app (the desktop profile lists all three, so this layer inherits
+# the whole Web runtime and only adds one host row).
+#
+# The row mounts after the web server binds and spawns the shell binary
+# attached to the loopback URL, tying the profile's lifetime to the window:
+# closing the window requests a graceful app exit, and disposing the tree
+# (a signal, or another app's exit) closes the shell.
+#
+# The row carries no config: the shell binary resolves from the row's bin
+# override, then DSH_DESKTOP_BIN, then a binary bundled beside this package,
+# then `dsh-desktop` on PATH. Pin an explicit executable here or in the
+# profile's cordis.patch.yml when needed.
+
+- insert:
+    - id: desktop-launch
+      name: '@aqian0/dsh-desktop-plugin'
+      inject: [webServer, appExit]

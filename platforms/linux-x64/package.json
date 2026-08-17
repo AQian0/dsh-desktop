@@ -1,0 +1,17 @@
+{
+  "name": "@aqian0/dsh-desktop-plugin-linux-x64",
+  "version": "0.1.0",
+  "description": "dsh-desktop shell binary for linux x64 (optionalDependency of @aqian0/dsh-desktop-plugin)",
+  "license": "MIT",
+  "author": "aqian0",
+  "repository": "https://github.com/aqian0/dsh-desktop",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin"
+  ],
+  "os": ["linux"],
+  "cpu": ["x64"]
+}
