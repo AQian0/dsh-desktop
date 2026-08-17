@@ -88,8 +88,13 @@ jobs:
         with:
           node-version: 22
 
+      # npm does not create a missing pack-destination (fails with ENOENT,
+      # exit 254), unlike the platform legs where the packaging script
+      # mkdirs dist/ first.
       - name: Pack plugin package
-        run: npm pack ./plugin --pack-destination dist-plugin
+        run: |
+          mkdir -p dist-plugin
+          npm pack ./plugin --pack-destination dist-plugin
 
       - name: Upload plugin tarball
         uses: actions/upload-artifact@v4
