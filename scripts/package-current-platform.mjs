@@ -56,7 +56,13 @@ if (platformPkg.version !== pluginVersion) {
 // Pack both into dist/.
 mkdirSync(distDir, { recursive: true });
 const pack = (dir) => {
-  const lines = execFileSync("npm", ["pack", "--pack-destination", distDir], { cwd: dir, encoding: "utf8" }).trim().split("\n");
+  // npm is a .cmd shim on Windows, which execFile cannot run without a shell
+  // (rejected outright on current Node), so route through the shell there.
+  const lines = execFileSync("npm", ["pack", "--pack-destination", distDir], {
+    cwd: dir,
+    encoding: "utf8",
+    shell: platform() === "win32"
+  }).trim().split("\n");
   return join(distDir, lines[lines.length - 1]);
 };
 const pluginTarball = pack(join(repoRoot, "plugin"));
