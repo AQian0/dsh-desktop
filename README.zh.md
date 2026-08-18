@@ -18,9 +18,6 @@ DeepSeek Harness Web 界面的 Tauri 2 桌面套壳。dsh 插件
 
 ### 快捷插件式安装
 
-> `@aqian0/dsh-desktop-plugin` 尚未发布到 npm。发布后即可使用下列命令；
-> 在此之前请先使用下方的手动安装。
-
 ```sh
 dsh plugin --profile desktop add @aqian0/dsh-desktop-plugin
 dsh --profile desktop

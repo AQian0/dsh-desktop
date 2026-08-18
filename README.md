@@ -19,9 +19,6 @@ the profile, and the window never outlives the runtime.
 
 ### Quick install as a dsh plugin
 
-> `@aqian0/dsh-desktop-plugin` is not published to npm yet. The commands below
-> will work once it is; until then use the manual install below.
-
 ```sh
 dsh plugin --profile desktop add @aqian0/dsh-desktop-plugin
 dsh --profile desktop
