@@ -14,7 +14,8 @@
 //!   load-bearing link there).
 //!
 //! The window renders the product's own Web surface; this crate contributes
-//! only process lifetime coupling, never UI.
+//! process lifetime coupling and follows the desktop environment's light/dark
+//! window theme, but never renders UI content itself.
 
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use url::Url;
@@ -25,6 +26,10 @@ fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result
         .inner_size(1280.0, 800.0)
         .min_inner_size(960.0, 600.0)
         .center()
+        // Follow the desktop environment's current theme (None = system
+        // settings), so scheduled / automatic light-dark switches keep
+        // working while the window is open.
+        .theme(None)
         .build()?;
     Ok(())
 }
@@ -141,7 +146,11 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building the Tauri shell")
-        .run(|_app_handle, _event| {});
+        .run(|_app_handle, _event| {
+            // With `theme(None)` the runtime follows the desktop
+            // environment and propagates system theme changes to the
+            // WebView automatically, so no manual theme handling is needed.
+        });
 }
 
 #[cfg(test)]

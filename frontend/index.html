@@ -6,7 +6,19 @@
     <title>DeepSeek Harness</title>
     <style>
       :root {
-        color-scheme: dark;
+        color-scheme: light dark;
+        --background: #101018;
+        --foreground: #e6e6f0;
+        --muted: #8b8b9e;
+        --spinner-track: #3a3a4c;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --background: #f4f4f8;
+          --foreground: #1d1d28;
+          --muted: #636374;
+          --spinner-track: #d8d8e4;
+        }
       }
       html,
       body {
@@ -16,8 +28,8 @@
       body {
         display: grid;
         place-items: center;
-        background: #101018;
-        color: #e6e6f0;
+        background: var(--background);
+        color: var(--foreground);
         font-family: system-ui, -apple-system, "PingFang SC", sans-serif;
       }
       main {
@@ -31,14 +43,14 @@
       }
       p {
         font-size: 0.875rem;
-        color: #8b8b9e;
+        color: var(--muted);
         margin: 0.25rem 0;
       }
       .spinner {
         width: 20px;
         height: 20px;
         margin: 1.25rem auto 0;
-        border: 2px solid #3a3a4c;
+        border: 2px solid var(--spinner-track);
         border-top-color: #4d6bfe;
         border-radius: 50%;
         animation: spin 1s linear infinite;
