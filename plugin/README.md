@@ -32,10 +32,17 @@ Equivalently, write `dsh.profile.bundles` as
 directly - dsh has no explicit profile inheritance; inheriting a profile is
 bundle composition.
 
-**Verification**: the repository ships a GUI-free two-way lifetime smoke,
-`pnpm plugin:smoke` - window-close direction (the fake shell exits 0, the
-profile exits 0 on its own) and runtime-death direction (SIGTERM to dsh,
-tree disposal, the plugin's `ctx.effect` cleanup kills the fake shell).
+The desktop bundle pins the `web-runtime` row's `openBrowser` to `false`: the
+desktop window replaces the browser handoff, so `dsh --profile desktop` no
+longer hands the URL to the system default browser. Passing `--no-open` is
+still accepted but is now redundant.
+
+**Verification**: the repository ships a GUI-free smoke, `pnpm plugin:smoke` -
+it first asserts that the composed profile pins `web-runtime.openBrowser` to
+`false` (no default-browser handoff), then exercises the window-close
+direction (the fake shell exits 0, the profile exits 0 on its own) and the
+runtime-death direction (SIGTERM to dsh, tree disposal, the plugin's
+`ctx.effect` cleanup kills the fake shell).
 
 ## Shell binary resolution
 

@@ -27,9 +27,14 @@ web 模板同一机制)。不要 `dsh plugin add @deepseek-ai/dsh-web-app`——
 `["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@aqian0/dsh-desktop-plugin"]`
 即可——dsh 没有显式的 profile 继承,继承即 bundle 组合。
 
-**验证**:仓库自带无 GUI 的双向生命周期冒烟 `pnpm plugin:smoke`——窗口关闭
-方向(假壳退出 0 → profile 自行以码 0 退出)与运行时先死方向(SIGTERM dsh →
-树释放 → 插件的 `ctx.effect` 清理钩子杀死假壳)。
+桌面 bundle 会把 `web-runtime` 行的 `openBrowser` 固定为 `false`:桌面窗口替代
+浏览器跳转,因此 `dsh --profile desktop` 不会再把 URL 交给系统默认浏览器;
+`--no-open` 仍可传入但已是冗余参数。
+
+**验证**:仓库自带无 GUI 冒烟 `pnpm plugin:smoke`——先断言组合后的配置已把
+`web-runtime.openBrowser` 固定为 `false`(不会把 URL 交给系统浏览器),再验证
+窗口关闭方向(假壳退出 0 → profile 自行以码 0 退出)与运行时先死方向
+(SIGTERM dsh → 树释放 → 插件的 `ctx.effect` 清理钩子杀死假壳)。
 
 ## 套壳二进制解析
 

@@ -25,7 +25,9 @@ dsh --profile desktop
 ```
 
 The plugin package ships per-platform prebuilt shell binaries through
-optionalDependencies, so no Rust toolchain is required.
+optionalDependencies, so no Rust toolchain is required. Its bundle layer also
+pins `web-runtime.openBrowser` to `false`, so `dsh --profile desktop` opens
+only the desktop window and never hands the URL to the system default browser.
 
 If the profile was newly created and has no Web bundle, set
 `dsh.profile.bundles` in `~/.dsh/profiles/desktop/package.json` to:

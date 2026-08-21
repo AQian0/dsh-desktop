@@ -24,7 +24,8 @@ dsh --profile desktop
 ```
 
 插件包通过 optionalDependencies 附带各平台预编译的套壳二进制，无需安装 Rust
-工具链。
+工具链。插件层还会把 `web-runtime.openBrowser` 固定为 `false`，因此
+`dsh --profile desktop` 只打开桌面窗口，不会再拉起系统默认浏览器。
 
 如果 profile 是新建的且没有 Web bundle，请把
 `~/.dsh/profiles/desktop/package.json` 中的 `dsh.profile.bundles` 设为：
