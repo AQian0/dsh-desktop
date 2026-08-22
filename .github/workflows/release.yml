@@ -98,6 +98,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v7
         with:
           name: npm-darwin-arm64
