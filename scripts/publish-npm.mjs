@@ -15,6 +15,8 @@ import { resolve } from "node:path";
 
 const [target, distDir, ref] = process.argv.slice(2);
 const version = ref?.replace(/^v/, "");
+const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const shell = process.platform === "win32";
 
 if (!target || !distDir || !version) {
   console.error("usage: node scripts/publish-npm.mjs <target> <dist-dir> <v?version>");
@@ -43,7 +45,7 @@ if (!existsSync(tarballPath)) {
 const spec = `${name}@${version}`;
 const alreadyPublished = (() => {
   try {
-    execFileSync("npm", ["view", spec, "version"], { stdio: "ignore" });
+    execFileSync(npm, ["view", spec, "version"], { stdio: "ignore", shell });
     return true;
   } catch {
     return false;
@@ -55,8 +57,8 @@ if (alreadyPublished) {
 } else {
   console.log(`publishing ${tarballPath} as ${spec}`);
   execFileSync(
-    "npm",
+    npm,
     ["publish", tarballPath, "--access", "public"],
-    { stdio: "inherit" }
+    { stdio: "inherit", shell }
   );
 }
