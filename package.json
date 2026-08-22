@@ -6,7 +6,7 @@
   "type": "module",
   "license": "MIT",
   "author": "aqian0",
-  "repository": "https://github.com/aqian0/dsh-desktop",
+  "repository": "https://github.com/AQian0/dsh-desktop",
   "scripts": {
     "shell:build": "cargo build --manifest-path src-tauri/Cargo.toml",
     "build": "tauri build",

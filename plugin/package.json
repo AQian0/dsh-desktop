@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "license": "MIT",
   "author": "aqian0",
-  "repository": "https://github.com/aqian0/dsh-desktop",
+  "repository": "https://github.com/AQian0/dsh-desktop",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
