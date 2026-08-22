@@ -1,7 +1,7 @@
 {
   "name": "@aqian0/dsh-desktop",
   "description": "Desktop shell that wraps the dsh web runtime (built with Tauri 2)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -15,7 +15,9 @@
     "icon": "tauri icon",
     "plugin:install": "node scripts/install-profile.mjs",
     "plugin:smoke": "node scripts/smoke-lifetime.mjs",
-    "plugin:run": "dsh --profile desktop"
+    "plugin:run": "dsh --profile desktop",
+    "release:check": "node scripts/release-check.mjs",
+    "release:bump": "node scripts/release-bump.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.0"

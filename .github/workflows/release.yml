@@ -1,0 +1,134 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node scripts/release-check.mjs "${{ github.ref_name }}"
+
+  platforms:
+    name: ${{ matrix.slug }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - slug: darwin-arm64
+            os: macos-14
+          - slug: darwin-x64
+            os: macos-15-intel
+          - slug: linux-x64
+            os: ubuntu-latest
+          - slug: win32-x64
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Tauri system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libayatana-appindicator3-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Build, pack, and publish
+        run: |
+          node scripts/package-current-platform.mjs --build
+          node scripts/publish-npm.mjs "${{ matrix.slug }}" dist "${{ github.ref_name }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-${{ matrix.slug }}
+          path: dist/*${{ matrix.slug }}*.tgz
+          if-no-files-found: error
+
+  plugin:
+    name: plugin
+    needs: platforms
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Pack and publish plugin
+        run: |
+          mkdir -p dist
+          npm pack ./plugin --pack-destination dist
+          node scripts/publish-npm.mjs plugin dist "${{ github.ref_name }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-plugin
+          path: dist/*.tgz
+          if-no-files-found: error
+
+  github-release:
+    needs: plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: npm-darwin-arm64
+          path: dist
+      - uses: actions/download-artifact@v7
+        with:
+          name: npm-darwin-x64
+          path: dist
+      - uses: actions/download-artifact@v7
+        with:
+          name: npm-linux-x64
+          path: dist
+      - uses: actions/download-artifact@v7
+        with:
+          name: npm-win32-x64
+          path: dist
+      - uses: actions/download-artifact@v7
+        with:
+          name: npm-plugin
+          path: dist
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" --json url >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.tgz --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.tgz \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes \
+              --verify-tag
+          fi
