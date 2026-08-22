@@ -29,7 +29,8 @@ web 模板同一机制)。不要 `dsh plugin add @deepseek-ai/dsh-web-app`——
 
 桌面 bundle 会把 `web-runtime` 行的 `openBrowser` 固定为 `false`:桌面窗口替代
 浏览器跳转,因此 `dsh --profile desktop` 不会再把 URL 交给系统默认浏览器;
-`--no-open` 仍可传入但已是冗余参数。
+`--no-open` 仍可传入但已是冗余参数。窗口内同源的 Web 应用路由继续留在套壳中,
+外部 `http(s)`/`mailto:`/`tel:` 链接则交给系统默认应用打开。
 
 **验证**:仓库自带无 GUI 冒烟 `pnpm plugin:smoke`——先断言组合后的配置已把
 `web-runtime.openBrowser` 固定为 `false`(不会把 URL 交给系统浏览器),再验证

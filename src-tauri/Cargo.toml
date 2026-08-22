@@ -17,6 +17,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 libc = "0.2"
+open = "5"
 url = "2"
 
 [profile.release]

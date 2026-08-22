@@ -35,7 +35,9 @@ bundle composition.
 The desktop bundle pins the `web-runtime` row's `openBrowser` to `false`: the
 desktop window replaces the browser handoff, so `dsh --profile desktop` no
 longer hands the URL to the system default browser. Passing `--no-open` is
-still accepted but is now redundant.
+still accepted but is now redundant. Inside the window, same-origin Web app
+routes stay in the shell; external `http(s)`/`mailto:`/`tel:` links are handed
+to the system default application.
 
 **Verification**: the repository ships a GUI-free smoke, `pnpm plugin:smoke` -
 it first asserts that the composed profile pins `web-runtime.openBrowser` to

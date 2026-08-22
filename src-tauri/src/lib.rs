@@ -14,13 +14,50 @@
 //!   load-bearing link there).
 //!
 //! The window renders the product's own Web surface; this crate contributes
-//! process lifetime coupling and follows the desktop environment's light/dark
-//! window theme, but never renders UI content itself.
+//! process lifetime coupling, follows the desktop environment's light/dark
+//! window theme, and hands external links to the system browser, but never
+//! renders UI content itself.
 
-use tauri::{WebviewUrl, WebviewWindowBuilder};
+use tauri::{webview::NewWindowResponse, WebviewUrl, WebviewWindowBuilder};
 use url::Url;
 
+/// What the shell should do with a URL requested by web content.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LinkAction {
+    /// Same-origin URL of the attached Web runtime: keep it in the shell.
+    KeepInWebview,
+    /// Hand off to the operating system's default browser/app.
+    OpenExternally,
+    /// Unsupported or untrusted scheme: neither navigate nor launch an app.
+    Block,
+}
+
+/// Decides how a requested link should be handled.
+fn link_action(url: &Url, app_url: Option<&Url>) -> LinkAction {
+    if app_url.is_some_and(|app_url| url.origin() == app_url.origin()) {
+        LinkAction::KeepInWebview
+    } else if matches!(url.scheme(), "http" | "https" | "mailto" | "tel") {
+        LinkAction::OpenExternally
+    } else {
+        LinkAction::Block
+    }
+}
+
+fn open_externally(url: &Url) {
+    if let Err(error) = open::that_detached(url.as_str()) {
+        eprintln!("[dsh-desktop] failed to open {url} with the default application: {error}");
+    }
+}
+
 fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result<()> {
+    let app_url = match &url {
+        WebviewUrl::External(url) => Some(url.clone()),
+        WebviewUrl::App(_) | _ => None,
+    };
+
+    let navigation_app_url = app_url.clone();
+    let new_window_app_url = app_url;
+
     WebviewWindowBuilder::new(app, "main", url)
         .title(title)
         .inner_size(1280.0, 800.0)
@@ -30,6 +67,36 @@ fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result
         // settings), so scheduled / automatic light-dark switches keep
         // working while the window is open.
         .theme(None)
+        // Regular same-tab navigations: keep the app origin in the shell,
+        // open http(s)/mailto/tel links in the user's default application.
+        .on_navigation(
+            move |url| match link_action(url, navigation_app_url.as_ref()) {
+                LinkAction::KeepInWebview => true,
+                LinkAction::OpenExternally => {
+                    open_externally(url);
+                    false
+                }
+                LinkAction::Block => {
+                    eprintln!("[dsh-desktop] blocked navigation to unsupported URL: {url}");
+                    false
+                }
+            },
+        )
+        // window.open / target="_blank" requests: same-origin popups are
+        // allowed for the Web app, external links are handed to the OS.
+        .on_new_window(
+            move |url, _features| match link_action(&url, new_window_app_url.as_ref()) {
+                LinkAction::KeepInWebview => NewWindowResponse::Allow,
+                LinkAction::OpenExternally => {
+                    open_externally(&url);
+                    NewWindowResponse::Deny
+                }
+                LinkAction::Block => {
+                    eprintln!("[dsh-desktop] blocked unsupported new-window URL: {url}");
+                    NewWindowResponse::Deny
+                }
+            },
+        )
         .build()?;
     Ok(())
 }
@@ -194,5 +261,43 @@ mod tests {
         assert!(parse_loopback_url("http://192.168.1.5:3080").is_none());
         assert!(parse_loopback_url("http://127.0.0.1").is_none());
         assert!(parse_loopback_url("nothing here").is_none());
+    }
+
+    #[test]
+    fn keeps_web_app_origin_in_the_shell() {
+        let app_url = Url::parse("http://127.0.0.1:3080/chat").expect("app URL");
+        for url in [
+            "http://127.0.0.1:3080/chat/deep-think",
+            "http://127.0.0.1:3080/api/models?detail=1",
+        ] {
+            let url = Url::parse(url).expect("internal URL");
+            assert_eq!(link_action(&url, Some(&app_url)), LinkAction::KeepInWebview);
+        }
+    }
+
+    #[test]
+    fn opens_web_and_app_links_with_the_system_default_handler() {
+        let app_url = Url::parse("http://127.0.0.1:3080").expect("app URL");
+        for url in [
+            "https://example.com/article",
+            "http://127.0.0.1:3081/other-service",
+            "mailto:user@example.com",
+            "tel:+1234567890",
+        ] {
+            let url = Url::parse(url).expect("external URL");
+            assert_eq!(
+                link_action(&url, Some(&app_url)),
+                LinkAction::OpenExternally
+            );
+        }
+    }
+
+    #[test]
+    fn blocks_unsupported_link_schemes() {
+        let app_url = Url::parse("http://127.0.0.1:3080").expect("app URL");
+        for url in ["file:///etc/passwd", "data:text/plain,hello"] {
+            let url = Url::parse(url).expect("unsupported URL");
+            assert_eq!(link_action(&url, Some(&app_url)), LinkAction::Block);
+        }
     }
 }
