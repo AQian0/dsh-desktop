@@ -67,6 +67,9 @@ fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result
         // settings), so scheduled / automatic light-dark switches keep
         // working while the window is open.
         .theme(None)
+        // Allow the Web app to read the system clipboard (required on Linux
+        // and Windows for pasting images and other rich clipboard content).
+        .enable_clipboard_access()
         // Regular same-tab navigations: keep the app origin in the shell,
         // open http(s)/mailto/tel links in the user's default application.
         .on_navigation(
