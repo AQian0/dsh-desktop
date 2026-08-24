@@ -1,7 +1,7 @@
 {
   "name": "@aqian0/dsh-desktop",
   "description": "Desktop shell that wraps the dsh web runtime (built with Tauri 2)",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "license": "MIT",
