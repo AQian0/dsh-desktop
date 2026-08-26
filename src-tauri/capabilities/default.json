@@ -6,6 +6,12 @@
     "main"
   ],
   "permissions": [
-    "core:default"
-  ]
+    "core:default",
+    "clipboard-manager:allow-read-image"
+  ],
+  "remote": {
+    "urls": [
+      "http://127.0.0.1:*"
+    ]
+  }
 }

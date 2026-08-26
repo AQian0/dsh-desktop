@@ -49,6 +49,93 @@ fn open_externally(url: &Url) {
     }
 }
 
+/// WebView-side fallback for Linux Tauri WebViews that do not expose
+/// clipboard images as file items in the native `paste` event.
+///
+/// Instead of simulating a drag-and-drop, this reads the image through
+/// Tauri's clipboard plugin and replays a normal `paste` event containing the
+/// image, so the Web app's existing paste handler can add it through its own
+/// image-intake path.
+const PASTE_IMAGE_SCRIPT: &str = r#"
+(() => {
+  const KEY = '__dshDesktopClipboardImageFallback';
+  if (window[KEY]) return;
+  window[KEY] = true;
+
+  const hasNativeImageFile = (event) => {
+    const items = event.clipboardData && event.clipboardData.items;
+    if (!items) return false;
+    for (const item of items) {
+      if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile ? item.getAsFile() : null;
+        if (file !== null) return true;
+      }
+    }
+    return false;
+  };
+
+  const replayPasteWithImage = (target, file) => {
+    const clipboardData = {
+      items: [
+        {
+          kind: 'file',
+          type: file.type,
+          getAsFile: () => file,
+        },
+      ],
+      getData: () => '',
+    };
+    const paste = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(paste, 'clipboardData', { value: clipboardData });
+    target.dispatchEvent(paste);
+  };
+
+  const addClipboardImage = async (target) => {
+    const invoke = window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke;
+    if (!invoke) return;
+    let rid = null;
+    try {
+      rid = await invoke('plugin:clipboard-manager|read_image');
+      if (rid == null) return;
+      const rgba = new Uint8Array(await invoke('plugin:image|rgba', { rid }));
+      const size = await invoke('plugin:image|size', { rid });
+      if (!size || !size.width || !size.height || rgba.length === 0) return;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = size.width;
+      canvas.height = size.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const imageData = ctx.createImageData(size.width, size.height);
+      imageData.data.set(rgba);
+      ctx.putImageData(imageData, 0, 0);
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) return;
+      const file = new File([blob], 'pasted-image.png', { type: 'image/png' });
+      replayPasteWithImage(target, file);
+    } catch (error) {
+      // No image on the clipboard, or the platform cannot read one.
+    } finally {
+      if (rid != null) {
+        invoke('plugin:resources|close', { rid }).catch(() => {});
+      }
+    }
+  };
+
+  document.addEventListener('paste', (event) => {
+    if (hasNativeImageFile(event)) return;
+    const target = event.target;
+    const editable = target && (
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable === true
+    );
+    if (!editable) return;
+    addClipboardImage(target);
+  }, true);
+})();
+"#;
+
 fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result<()> {
     let app_url = match &url {
         WebviewUrl::External(url) => Some(url.clone()),
@@ -70,6 +157,9 @@ fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result
         // Allow the Web app to read the system clipboard (required on Linux
         // and Windows for pasting images and other rich clipboard content).
         .enable_clipboard_access()
+        // Install the clipboard-image fallback for WebViews that do not put
+        // clipboard images into the native paste event (mainly Linux).
+        .initialization_script(PASTE_IMAGE_SCRIPT)
         // Regular same-tab navigations: keep the app origin in the shell,
         // open http(s)/mailto/tel links in the user's default application.
         .on_navigation(
@@ -185,6 +275,7 @@ pub fn run() {
     let attach = parse_attach_args(&args);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(move |app| match attach {
             Ok(Some(url)) => {
                 // The runtime is our parent and already serves the Web
