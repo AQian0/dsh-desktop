@@ -4,13 +4,13 @@
 
 DeepSeek Harness Web 界面的 Tauri 2 桌面套壳。dsh 插件
 `@aqian0/dsh-desktop-plugin` 会在 Web 运行时绑定回环端口后，以
-`dsh-desktop --attach http://127.0.0.1:<port>` 打开一个桌面窗口。运行时仍是
+`dsh-desktop --attach <url>` 和运行时提供的鉴权回环 URL 打开桌面窗口。运行时仍是
 父进程：关闭窗口即退出 profile，窗口也不会比运行时活得更久。
 
 ## 前置条件
 
-- [`dsh`](https://github.com/deepseek-ai/deepseek-harness) CLI：
-  `npm i -g @deepseek-ai/dsh`
+- [`dsh`](https://github.com/deepseek-ai/deepseek-harness) CLI 0.1.2-rc.1 或更高版本：
+  `npm i -g @deepseek-ai/dsh@next`
 - 源码安装还需：Node.js + pnpm、Rust，以及
   [Tauri 平台依赖](https://tauri.app/start/prerequisites/)。
 
@@ -27,7 +27,8 @@ dsh --profile desktop
 工具链。插件层还会把 `web-runtime.openBrowser` 固定为 `false`，因此
 `dsh --profile desktop` 只打开桌面窗口，不会再拉起系统默认浏览器。套壳窗口内
 同源的 Web 应用路由继续留在窗口内，跨源链接以及 `mailto:`/`tel:` 链接会交给
-系统默认浏览器或应用打开。
+系统默认浏览器或应用打开。初始 URL 带一次性进程令牌，Web 运行时会将其换成
+会话 Cookie。
 
 如果 profile 是新建的且没有 Web bundle，请把
 `~/.dsh/profiles/desktop/package.json` 中的 `dsh.profile.bundles` 设为：

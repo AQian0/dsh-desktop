@@ -3,7 +3,8 @@
 Desktop shell bundle for DeepSeek Harness: opens the Web surface in a Tauri
 webview window. Installed as a profile plugin, `dsh --profile desktop` boots
 the Web runtime and opens the desktop window once it binds the loopback port;
-closing the window exits the profile gracefully.
+closing the window exits the profile gracefully. Requires dsh 0.1.2-rc.1 or
+newer.
 
 ## Install
 
@@ -40,11 +41,9 @@ routes stay in the shell; external `http(s)`/`mailto:`/`tel:` links are handed
 to the system default application.
 
 **Verification**: the repository ships a GUI-free smoke, `pnpm plugin:smoke` -
-it first asserts that the composed profile pins `web-runtime.openBrowser` to
-`false` (no default-browser handoff), then exercises the window-close
-direction (the fake shell exits 0, the profile exits 0 on its own) and the
-runtime-death direction (SIGTERM to dsh, tree disposal, the plugin's
-`ctx.effect` cleanup kills the fake shell).
+it asserts that the profile disables the default-browser handoff, that the
+shell receives dsh's process-authenticated URL, and that both window-close and
+runtime-death lifecycle directions work.
 
 ## Shell binary resolution
 
@@ -78,7 +77,11 @@ own OS (or by a CI matrix).
 
 The shell binary (`src-tauri`) is attach-only, with a single boot shape:
 
-`dsh-desktop --attach http://127.0.0.1:<port>`
+`dsh-desktop --attach <loopback-url>`
+
+The plugin obtains this URL from dsh's Connection service. It includes a
+one-time `?token=...`, which is exchanged for an HttpOnly session cookie before
+redirecting to the clean root.
 
 It opens the window only; it neither spawns nor supervises any runtime (the
 runtime is the parent process). The lifetime is tied in both directions:

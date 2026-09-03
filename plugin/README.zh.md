@@ -2,7 +2,8 @@
 
 DeepSeek Harness 的桌面套壳 bundle:把 Web 界面开进一个 Tauri webview 窗口。
 作为 dsh profile 的插件安装后,`dsh --profile desktop` 启动 Web 运行时并在其
-绑定回环端口后打开桌面窗口;关闭窗口即优雅退出 profile。
+绑定回环端口后打开桌面窗口;关闭窗口即优雅退出 profile。需要 dsh 0.1.2-rc.1
+或更高版本。
 
 ## 安装
 
@@ -32,10 +33,9 @@ web 模板同一机制)。不要 `dsh plugin add @deepseek-ai/dsh-web-app`——
 `--no-open` 仍可传入但已是冗余参数。窗口内同源的 Web 应用路由继续留在套壳中,
 外部 `http(s)`/`mailto:`/`tel:` 链接则交给系统默认应用打开。
 
-**验证**:仓库自带无 GUI 冒烟 `pnpm plugin:smoke`——先断言组合后的配置已把
-`web-runtime.openBrowser` 固定为 `false`(不会把 URL 交给系统浏览器),再验证
-窗口关闭方向(假壳退出 0 → profile 自行以码 0 退出)与运行时先死方向
-(SIGTERM dsh → 树释放 → 插件的 `ctx.effect` 清理钩子杀死假壳)。
+**验证**:仓库自带无 GUI 冒烟 `pnpm plugin:smoke`——它断言 profile 已关闭
+系统浏览器跳转、套壳收到 dsh 的进程鉴权 URL，并验证窗口关闭和运行时先死两个
+生命周期方向。
 
 ## 套壳二进制解析
 
@@ -66,7 +66,10 @@ optionalDependencies 才能在每个平台解析到二进制;其他平台的 tgz
 
 套壳二进制(`src-tauri`)是 attach-only 形态,只有一种启动方式:
 
-`dsh-desktop --attach http://127.0.0.1:<port>`
+`dsh-desktop --attach <loopback-url>`
+
+插件从 dsh 的 Connection 服务取得该 URL。URL 带一次性 `?token=...`，Web
+运行时将其换成 HttpOnly 会话 Cookie 后重定向到干净根路径。
 
 它只开窗口,不启动也不监督任何运行时(运行时是父进程)。生命周期双向绑定:
 

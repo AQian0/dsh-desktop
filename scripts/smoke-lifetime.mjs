@@ -5,9 +5,9 @@
 // Preflight: `dsh --profile desktop --dump-config` must show the desktop
 // plugin patching web-runtime.openBrowser to false, so the desktop window
 // replaces the web app's default-browser handoff.
-// Test A (window close -> profile exit): the fake shell exits 0 immediately;
-// the profile must exit on its own with code 0 (graceful appExit plus the
-// bounded force-exit grace).
+// Test A (authenticated URL + window close -> profile exit): the fake shell
+// records its attach URL and exits 0 immediately; it must receive the same
+// process-authenticated URL announced by dsh, and the profile must exit 0.
 // Test B (runtime death -> window close): the fake shell sleeps and records
 // its pid; SIGTERM to the dsh process must dispose the tree, run this
 // plugin's ctx.effect cleanup, and kill the fake shell.
@@ -93,8 +93,13 @@ if (!bundles.includes("@aqian0/dsh-desktop-plugin")) {
 }
 
 const dir = mkdtempSync(join(tmpdir(), "dsh-desktop-smoke-"));
+const attachedUrlFile = join(dir, "attached-url");
 const exitingShell = join(dir, "exiting-shell.sh");
-writeFileSync(exitingShell, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+writeFileSync(
+  exitingShell,
+  "#!/bin/sh\nprintf '%s\\n' \"$2\" > " + JSON.stringify(attachedUrlFile) + "\nexit 0\n",
+  { mode: 0o755 }
+);
 const sleeperPidFile = join(dir, "sleeper.pid");
 const sleeperShell = join(dir, "sleeper-shell.sh");
 writeFileSync(
@@ -137,7 +142,15 @@ try {
     if (outcome !== "code=0") {
       throw new Error("Test A failed (" + outcome + "):\n" + run.getOutput());
     }
-    console.log("Test A (window close -> profile exit 0): ok");
+    const prefix = "dsh web: ";
+    const announcedUrl = run.getOutput().split(/\r?\n/u)
+      .find((line) => line.startsWith(prefix + "http://127.0.0.1:"))
+      ?.slice(prefix.length).split(" ", 1)[0];
+    const attachedUrl = readFileSync(attachedUrlFile, "utf8").trim();
+    if (announcedUrl === undefined || attachedUrl !== announcedUrl) {
+      throw new Error("Test A failed: desktop shell did not receive dsh's announced launch URL");
+    }
+    console.log("Test A (authenticated URL + window close -> profile exit 0): ok");
   }
 
   // Test B: the runtime dies first (SIGTERM) -> tree disposal kills the shell.

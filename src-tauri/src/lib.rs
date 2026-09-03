@@ -320,10 +320,14 @@ mod tests {
 
     #[test]
     fn parses_attach_flag() {
-        let args = vec![String::from("--attach"), String::from("http://127.0.0.1:3080")];
+        let args = vec![
+            String::from("--attach"),
+            String::from("http://127.0.0.1:3080/?token=test_token-1"),
+        ];
         let url = parse_attach_args(&args).expect("attach ok").expect("url");
         assert_eq!(url.host_str(), Some("127.0.0.1"));
         assert_eq!(url.port(), Some(3080));
+        assert_eq!(url.query(), Some("token=test_token-1"));
     }
 
     #[test]
@@ -336,7 +340,10 @@ mod tests {
     #[test]
     fn attach_rejects_non_loopback_and_malformed() {
         for bad in [
-            vec![String::from("--attach"), String::from("http://192.168.1.5:3080")],
+            vec![
+                String::from("--attach"),
+                String::from("http://192.168.1.5:3080"),
+            ],
             vec![String::from("--attach"), String::from("http://127.0.0.1")],
             vec![String::from("--attach"), String::from("not a url")],
             vec![String::from("--attach")],

@@ -15,8 +15,8 @@
     surfaceContext: true
     trustedHosts: !!js ctx.webStartup.trustedHosts
 
-# The row mounts after the web server binds and spawns the shell binary
-# attached to the loopback URL, tying the profile's lifetime to the window:
+# The row mounts after the Web connection is ready and spawns the shell binary
+# attached to its authenticated loopback URL, tying the profile's lifetime to the window:
 # closing the window requests a graceful app exit, and disposing the tree
 # (a signal, or another app's exit) closes the shell.
 #
@@ -28,4 +28,4 @@
 - insert:
     - id: desktop-launch
       name: '@aqian0/dsh-desktop-plugin'
-      inject: [webServer, appExit]
+      inject: [webServer, connection, appExit]

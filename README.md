@@ -3,15 +3,15 @@
 English | [中文](README.zh.md)
 
 A Tauri 2 desktop shell for the DeepSeek Harness Web surface. The dsh plugin
-`@aqian0/dsh-desktop-plugin` launches `dsh-desktop --attach http://127.0.0.1:<port>`
-once the Web runtime binds its loopback port, and opens the Web app in a single
-desktop window. The runtime remains the parent process; closing the window exits
+`@aqian0/dsh-desktop-plugin` launches `dsh-desktop --attach <url>` with the Web
+runtime's authenticated loopback URL and opens the Web app in a single desktop
+window. The runtime remains the parent process; closing the window exits
 the profile, and the window never outlives the runtime.
 
 ## Prerequisites
 
-- [`dsh`](https://github.com/deepseek-ai/deepseek-harness) CLI:
-  `npm i -g @deepseek-ai/dsh`
+- [`dsh`](https://github.com/deepseek-ai/deepseek-harness) CLI 0.1.2-rc.1 or newer:
+  `npm i -g @deepseek-ai/dsh@next`
 - For source installs: Node.js + pnpm, Rust, and the
   [Tauri platform prerequisites](https://tauri.app/start/prerequisites/).
 
@@ -30,7 +30,8 @@ pins `web-runtime.openBrowser` to `false`, so `dsh --profile desktop` opens
 only the desktop window and never hands the URL to the system default browser.
 Inside the shell, same-origin Web app routes keep navigating in the window,
 while links to other origins and `mailto:`/`tel:` links are handed to the
-system default browser or app.
+system default browser or app. The initial URL carries a one-time process token
+that the Web runtime exchanges for its session cookie.
 
 If the profile was newly created and has no Web bundle, set
 `dsh.profile.bundles` in `~/.dsh/profiles/desktop/package.json` to:

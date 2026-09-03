@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 /**
 * @aqian0/dsh-desktop-plugin — desktop-launch host plugin. The bundle
 * patch adds one row that mounts after the web server binds; this plugin
-* spawns the desktop shell binary attached to the loopback URL and ties the
-* profile's lifetime to the window in both directions:
+* spawns the desktop shell binary attached to the authenticated loopback URL
+* and ties the profile's lifetime to the window in both directions:
 *
 * - window closed by the user: the shell exits, and the plugin requests a
 *   graceful app exit through the launcher-provided ctx.appExit (with a
@@ -31,8 +31,8 @@ import { fileURLToPath } from "node:url";
 */
 /** Stable Cordis plugin name. */
 const name = "desktop-launch";
-/** Services required: the bound web server and the launcher's exit request. */
-const inject = ["webServer", "appExit"];
+/** Services required: the bound Web connection and the launcher's exit request. */
+const inject = ["webServer", "connection", "appExit"];
 /** The canonical loopback host, matching the web-app's published URL. */
 const LOOPBACK_HOST = "127.0.0.1";
 /** The plugin package root, for locating a bundled shell binary. */
@@ -85,7 +85,7 @@ function resolveBin(config) {
 
 /**
 * Mount the desktop shell opener.
-* @param ctx - plugin context carrying the webServer and appExit services.
+* @param ctx - plugin context carrying the webServer, connection, and appExit services.
 * @param config - the row's config object.
 */
 function apply(ctx, config) {
@@ -114,12 +114,13 @@ function apply(ctx, config) {
 	};
 	const launch = () => {
 		const webServer = ctx.get("webServer");
-		if (webServer === void 0 || webServer.port === void 0) {
+		const connection = ctx.get("connection");
+		if (webServer === void 0 || webServer.port === void 0 || connection === void 0) {
 			// No Web surface in this composition (--help, config dumps, or a
 			// profile without dsh-web-app): nothing to attach, stay inert.
 			return;
 		}
-		const url = `http://${LOOPBACK_HOST}:${String(webServer.port)}`;
+		const url = connection.authenticatedUrl(`http://${LOOPBACK_HOST}:${String(webServer.port)}`);
 		const bin = resolveBin(config);
 		// stdin is a pipe the runtime holds: EOF (runtime death) makes the
 		// shell exit from its own attach-mode watcher.
