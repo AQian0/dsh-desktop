@@ -68,6 +68,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Test shell and startup state transitions
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+
       - name: Build release binary and pack platform package
         run: node scripts/package-current-platform.mjs --build
 

@@ -58,6 +58,9 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
+      - name: Test shell and startup state transitions
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+
       - name: Build, pack, and publish
         run: |
           node scripts/package-current-platform.mjs --build

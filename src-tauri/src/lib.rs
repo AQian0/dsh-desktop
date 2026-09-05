@@ -21,6 +21,8 @@
 use tauri::{webview::NewWindowResponse, WebviewUrl, WebviewWindowBuilder};
 use url::Url;
 
+mod startup;
+
 /// What the shell should do with a URL requested by web content.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LinkAction {
@@ -145,7 +147,13 @@ fn build_window(app: &tauri::App, url: WebviewUrl, title: &str) -> tauri::Result
     let navigation_app_url = app_url.clone();
     let new_window_app_url = app_url;
 
-    WebviewWindowBuilder::new(app, "main", url)
+    // Separate native construction from presentation on every desktop OS.
+    // The startup controller shows the window after Ready and an event-loop
+    // drain, then requests window and WebView focus once visibility is applied.
+    // WKWebView may still activate the application during construction.
+    WebviewWindowBuilder::new(app, startup::MAIN_WINDOW_LABEL, url)
+        .visible(false)
+        .focused(false)
         .title(title)
         .inner_size(1280.0, 800.0)
         .min_inner_size(960.0, 600.0)
@@ -273,6 +281,7 @@ fn watch_runtime_exit(handle: &tauri::AppHandle) {
 pub fn run() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let attach = parse_attach_args(&args);
+    let mut startup = startup::StartupPresentation::default();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -307,7 +316,8 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building the Tauri shell")
-        .run(|_app_handle, _event| {
+        .run(move |app_handle, event| {
+            startup.on_event(app_handle, &event);
             // With `theme(None)` the runtime follows the desktop
             // environment and propagates system theme changes to the
             // WebView automatically, so no manual theme handling is needed.

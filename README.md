@@ -66,6 +66,62 @@ pnpm package:current -- --build   # package plugin + current-platform binary for
 pnpm plugin:smoke                 # GUI-free lifetime smoke test
 ```
 
+## Desktop startup and input focus
+
+macOS, Windows, and Linux share one startup sequence:
+
+1. Create the native window hidden, without requesting initial window/WebView focus.
+2. Wait for Tauri `Ready` and the next event-loop drain, then request show once.
+3. Once the window reports visible and not minimized, request native-window focus
+   and embedded-WebView focus once, then retire the startup handler.
+
+On Linux, GTK applies show asynchronously. The handler restores GTK focusability
+before show and waits for visibility on subsequent event-loop drains rather than
+issuing a focus request that the still-hidden window would ignore. On macOS this
+also separates window presentation from AppKit's launch callback; WKWebView may
+still activate the application during construction.
+
+Startup does not wait for page loading and applies to the startup-error page too.
+A close/destroy event, an observed minimized state, or a main-window blur event
+while waiting for visibility cancels pending focus. The shell does not run a focus
+timer or re-trigger startup on page reloads, app switches, or display changes.
+Activation remains subject to Windows foreground rules and Linux window-manager/
+compositor policy, including Wayland;
+a successful API call does not guarantee foreground activation.
+
+Rust source changes do not update an installed prebuilt binary. To test locally,
+run from the project root (macOS/Linux):
+
+```sh
+pnpm shell:build
+DSH_DESKTOP_BIN="$PWD/src-tauri/target/debug/dsh-desktop" dsh --profile desktop
+```
+
+Windows PowerShell:
+
+```powershell
+pnpm shell:build
+$env:DSH_DESKTOP_BIN = Join-Path $PWD "src-tauri/target/debug/dsh-desktop.exe"
+dsh --profile desktop
+```
+
+Run the platform-independent startup state tests with
+`cargo test --locked --manifest-path src-tauri/Cargo.toml`. The package/release
+matrices also run these tests on each native build runner before packaging.
+
+Manual regression checks (require each native desktop; unit tests are not enough):
+
+- Repeat cold launches on primary and secondary displays with mixed scaling;
+  cover macOS Spaces, Windows foreground restrictions, and Linux X11/Wayland.
+  When activation is granted, buttons and text input should work immediately,
+  without first clicking another display.
+- Switch to another app, reload the page, and minimize or close the window during
+  startup and afterwards; it must not keep reclaiming focus or restoring itself.
+- Verify the window still appears with a slow/unavailable Web page and when
+  launched without `--attach` (the startup-error page).
+- Check single-display startup and both lifetime directions: closing the window
+  exits the profile, and stopping the runtime closes the window.
+
 ## License
 
 MIT — see [LICENSE](LICENSE). The app icon under `icons-src/` and
